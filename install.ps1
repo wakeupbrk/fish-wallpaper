@@ -19,13 +19,15 @@ try {
     $exe = Join-Path $install 'aquarium-fish\aquarium-fish.exe'
     if (-not (Test-Path $exe)) { throw "Missing executable: $exe" }
     New-Item -ItemType Directory -Path $bin -Force | Out-Null
-    Set-Content -Path (Join-Path $bin 'aquarium-fish.cmd') -Value "@echo off`r`n`"$exe`" %*`r`n" -Encoding ASCII
+    $launcher = '@echo off' + "`r`n" + '"%LOCALAPPDATA%\FishWallpaper\aquarium-fish\aquarium-fish.exe" %*' + "`r`n"
+    Set-Content -Path (Join-Path $bin 'aquarium-fish.cmd') -Value $launcher -Encoding ASCII
     if (-not (Get-Command fish -ErrorAction SilentlyContinue) -and -not (Test-Path (Join-Path $bin 'fish.cmd'))) {
         Copy-Item (Join-Path $bin 'aquarium-fish.cmd') (Join-Path $bin 'fish.cmd')
     }
     $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
     if (($userPath -split ';') -notcontains $bin) {
-        [Environment]::SetEnvironmentVariable('Path', ($userPath.TrimEnd(';') + ';' + $bin), 'User')
+        $newPath = if ([string]::IsNullOrWhiteSpace($userPath)) { $bin } else { $userPath.TrimEnd(';') + ';' + $bin }
+        [Environment]::SetEnvironmentVariable('Path', $newPath, 'User')
     }
     if (($env:Path -split ';') -notcontains $bin) { $env:Path += ";$bin" }
     Write-Host 'Installed aquarium-fish. Run aquarium-fish, then press Control-C to stop.'
