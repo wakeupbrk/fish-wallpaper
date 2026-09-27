@@ -8,7 +8,9 @@ New-Item -ItemType Directory -Path $temporary -Force | Out-Null
 try {
     $download = Join-Path $temporary $archive
     Invoke-WebRequest -Uri "$base/$archive" -OutFile $download
-    $sums = (Invoke-WebRequest -Uri "$base/SHA256SUMS").Content
+    $sumsFile = Join-Path $temporary 'SHA256SUMS'
+    Invoke-WebRequest -Uri "$base/SHA256SUMS" -OutFile $sumsFile
+    $sums = Get-Content -Raw -Path $sumsFile
     $line = ($sums -split "`n" | Where-Object { $_ -match "\s+$([regex]::Escape($archive))\s*$" } | Select-Object -First 1)
     if (-not $line) { throw 'Checksum entry missing.' }
     $expected = ($line.Trim() -split '\s+')[0].ToUpperInvariant()
