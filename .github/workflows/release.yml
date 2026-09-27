@@ -52,6 +52,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+      - name: Install desktop graphics libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxcb-cursor0 libxcb-image0 libxcb-keysyms1 libxcb-icccm4 libxcb-util1 libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxkbcommon-x11-0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
