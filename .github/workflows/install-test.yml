@@ -1,0 +1,36 @@
+name: Test public installers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-15
+    steps:
+      - name: Install from published command
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/wakeupbrk/fish-wallpaper/main/install.sh | sh
+          "$HOME/.local/bin/aquarium-fish" --check
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Install from published command
+        shell: pwsh
+        run: |
+          irm https://raw.githubusercontent.com/wakeupbrk/fish-wallpaper/main/install.ps1 | iex
+          & "$env:LOCALAPPDATA\FishWallpaper\aquarium-fish\aquarium-fish.exe" --check
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install desktop graphics libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libgl1 libxcb-cursor0 libxcb-image0 libxcb-keysyms1 libxcb-icccm4 libxcb-util1 libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxkbcommon-x11-0
+      - name: Install from published command
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/wakeupbrk/fish-wallpaper/main/install.sh | sh
+          "$HOME/.local/bin/aquarium-fish" --check
