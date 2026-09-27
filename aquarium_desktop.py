@@ -167,6 +167,7 @@ class AquariumWindow(QWidget):
         self.preview = preview
         self.cap = cv2.VideoCapture(str(VIDEO))
         self.frame: QImage | None = None
+        self.frame_count = 0
         self.images = [QImage(str(ASSETS / item[0])) for item in SPECIES]
         self.fish: list[dict] = []
         for kind, (_, count, width_range, speed_range) in enumerate(SPECIES):
@@ -210,6 +211,7 @@ class AquariumWindow(QWidget):
         if ok:
             height, width, _ = raw.shape
             self.frame = QImage(raw.data, width, height, raw.strides[0], QImage.Format.Format_BGR888).copy()
+            self.frame_count += 1
         now = time.monotonic()
         dt = min(max(now - self.last_tick, 0.0), 0.06)
         self.last_tick = now
@@ -300,6 +302,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Interactive aquarium desktop wallpaper")
     parser.add_argument("--check", action="store_true", help="verify packaged video and fish artwork")
     parser.add_argument("--preview", action="store_true", help="open a regular preview window")
+    parser.add_argument("--smoke", action="store_true", help="render briefly for package testing")
     args = parser.parse_args()
     try:
         check_assets()
@@ -309,7 +312,7 @@ def main() -> int:
     if args.check:
         print("Aquarium assets decode correctly.")
         return 0
-    if sys.platform.startswith("linux") and not args.preview:
+    if sys.platform.startswith("linux") and not (args.preview or args.smoke):
         if os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland":
             print("fish: Linux Wayland is not supported yet. Log into an X11 desktop session.", file=sys.stderr)
             return 1
@@ -317,15 +320,15 @@ def main() -> int:
             print("fish: an X11 display is required.", file=sys.stderr)
             return 1
     app = QApplication(sys.argv[:1])
-    if args.preview:
+    if args.preview or args.smoke:
         geometry = QRectF(0, 0, 1200, 752)
     else:
         geometry = QRectF(QApplication.primaryScreen().virtualGeometry())
-    window = AquariumWindow(geometry, preview=args.preview)
-    if sys.platform == "win32" and not args.preview:
+    window = AquariumWindow(geometry, preview=args.preview or args.smoke)
+    if sys.platform == "win32" and not (args.preview or args.smoke):
         window.show()
         attach_windows_desktop(window)
-    elif sys.platform.startswith("linux") and not args.preview:
+    elif sys.platform.startswith("linux") and not (args.preview or args.smoke):
         window.create()
         attach_x11_desktop(window)
         window.show()
@@ -335,6 +338,8 @@ def main() -> int:
     heartbeat = QTimer()
     heartbeat.timeout.connect(lambda: None)
     heartbeat.start(200)
+    if args.smoke:
+        QTimer.singleShot(1500, lambda: app.exit(0 if window.frame_count >= 2 else 1))
     signal.signal(signal.SIGINT, lambda *_: app.quit())
     signal.signal(signal.SIGTERM, lambda *_: app.quit())
     print("Aquarium is swimming behind your desktop icons. Press Control-C to stop.", flush=True)
