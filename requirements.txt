@@ -1,0 +1,2 @@
+PySide6-Essentials==6.9.2
+opencv-python-headless==4.14.0.94
